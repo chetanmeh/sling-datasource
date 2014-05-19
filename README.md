@@ -27,8 +27,8 @@ bundle to Driver class supported by it. With this feature there is no need to wr
 bundle as fragment to DataSource provider bundle
 
 
-Usage
------
+Configuration
+-------------
 
 1. Install the current bundle
 2. Install the JDBC Driver bundle
@@ -36,5 +36,24 @@ Usage
 
 If Felix WebConsole is used then you can configure it via Configuration UI at
 http://localhost:8080/system/console/configMgr/org.apache.sling.extensions.datasource.DataSourceFactory
+
+Usage
+-----
+
+Once the required configuration is done the `DataSource` would be registered as part of the OSGi Service Registry
+The service is registered with service property `datasource.name` whose value is the name of datasource provided in 
+OSGi config. 
+
+Following snippet demonstrates accessing the DataSource named `foo` via DS annotation
+
+    import javax.sql.DataSource;
+    import org.apache.felix.scr.annotations.Reference;
+    
+    public class DSExample {
+        
+        @Reference(target = "(&(objectclass=javax.sql.DataSource)(datasource.name=foo))")
+        private DataSource dataSource;
+    }
+
  
 [1]: http://tomcat.apache.org/tomcat-7.0-doc/jdbc-pool.html
