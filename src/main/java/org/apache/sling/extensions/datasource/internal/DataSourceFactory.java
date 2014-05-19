@@ -44,14 +44,13 @@ import org.apache.tomcat.jdbc.pool.PoolProperties;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceRegistration;
-import org.osgi.service.log.LogService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Component(
         name = DataSourceFactory.NAME,
-        label = "%pool.component.name",
-        description = "%pool.component.description",
+        label = "%datasource.component.name",
+        description = "%datasource.component.description",
         metatype = true,
         configurationFactory = true,
         policy = ConfigurationPolicy.REQUIRE
@@ -59,13 +58,16 @@ import org.slf4j.LoggerFactory;
 public class DataSourceFactory {
     public static final String NAME = "org.apache.sling.extensions.datasource.DataSourceFactory";
 
-    @Property(value = "com.somevendor.somedriver.Driver")
+    @Property
+    static final String PROP_DATASOURCE_NAME = "datasource.name";
+
+    @Property
     static final String PROP_DRIVERCLASSNAME = "driverClassName";
 
-    @Property(value = "jdbc:somedriver:someDB;param=value")
+    @Property
     static final String PROP_URL = "url";
 
-    @Property(value = "")
+    @Property
     static final String PROP_USERNAME = "username";
 
     @Property(passwordValue = "")
@@ -74,16 +76,10 @@ public class DataSourceFactory {
     @Property(intValue = PoolProperties.DEFAULT_MAX_ACTIVE)
     static final String PROP_MAXACTIVE = "maxActive";
 
-    @Property(value = "")
-    static final String PROP_DATASOURCE_NAME = "datasource.name";
-
     @Property(value = {}, cardinality = 1024)
     static final String PROP_DATASOURCE_SVC_PROPS = "datasource.svc.properties";
 
     private final Logger log = LoggerFactory.getLogger(getClass());
-
-    @Reference
-    private LogService logService;
 
     @Reference
     private DriverRegistry driverRegistry;
@@ -101,6 +97,8 @@ public class DataSourceFactory {
         Properties props = new Properties();
         name = PropertiesUtil.toString(config.get(PROP_DATASOURCE_NAME), null);
 
+        checkArgument(name != null, "DataSource name must be specified via [%s] property", PROP_DATASOURCE_NAME);
+
         //Copy the other properties first
         Map<String,String> otherProps = PropertiesUtil.toMap(config.get(PROP_DATASOURCE_SVC_PROPS), new String[0]);
         for(Map.Entry<String, String> e : otherProps.entrySet()){
@@ -109,11 +107,12 @@ public class DataSourceFactory {
 
         props.setProperty(org.apache.tomcat.jdbc.pool.DataSourceFactory.OBJECT_NAME, name);
 
-        copy(PROP_DRIVERCLASSNAME, config, props);
-        copy(PROP_URL, config, props);
-        copy(PROP_USERNAME, config, props);
-        copy(PROP_PASSWORD, config, props);
-        copy(PROP_MAXACTIVE, config, props);
+        for(String propName : DummyDataSourceFactory.getPropertyNames()){
+            String value = PropertiesUtil.toString(config.get(propName), null);
+            if(value != null){
+                props.setProperty(propName, value);
+            }
+        }
 
         dataSource = createDataSource(props, bundleContext);
 
@@ -209,10 +208,23 @@ public class DataSourceFactory {
         return "<UNKNOWN>";
     }
 
-    private static void copy(String name, Map<String,?> source, Properties dest){
-        String value = PropertiesUtil.toString(source.get(name), null);
-        if(value != null) {
-            dest.setProperty(name, value);
+
+
+    public static void checkArgument(boolean expression,
+                                     String errorMessageTemplate,
+                                     Object... errorMessageArgs) {
+        if (!expression) {
+            throw new IllegalArgumentException(
+                    String.format(errorMessageTemplate, errorMessageArgs));
+        }
+    }
+
+    /**
+     * Dummy impl to enable access to protected fields
+     */
+    private static class DummyDataSourceFactory extends org.apache.tomcat.jdbc.pool.DataSourceFactory {
+        static String[] getPropertyNames(){
+            return ALL_PROPERTIES;
         }
     }
 }

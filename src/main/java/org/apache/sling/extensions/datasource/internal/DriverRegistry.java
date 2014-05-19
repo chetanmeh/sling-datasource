@@ -33,12 +33,10 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.felix.scr.annotations.Activate;
 import org.apache.felix.scr.annotations.Component;
 import org.apache.felix.scr.annotations.Deactivate;
-import org.apache.felix.scr.annotations.Reference;
 import org.apache.felix.scr.annotations.Service;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.BundleEvent;
-import org.osgi.service.log.LogService;
 import org.osgi.util.tracker.BundleTracker;
 import org.osgi.util.tracker.BundleTrackerCustomizer;
 import org.slf4j.Logger;
@@ -56,20 +54,20 @@ public class DriverRegistry {
 
     private ConcurrentMap<DriverInfo, Driver> driverInfos = new ConcurrentHashMap<DriverInfo, Driver>();
 
-    public Collection<Driver> getDrivers(){
+    public Collection<Driver> getDrivers() {
         return driverInfos.values();
     }
 
     @Activate
-    protected void activate(BundleContext bundleContext){
+    protected void activate(BundleContext bundleContext) {
         bundleTracker = new BundleTracker<Collection<DriverInfo>>(bundleContext,
                 Bundle.ACTIVE, new DriverBundleTracker());
         bundleTracker.open();
     }
 
     @Deactivate
-    protected void deactivate(){
-        if(bundleTracker != null){
+    protected void deactivate() {
+        if (bundleTracker != null) {
             bundleTracker.close();
         }
     }
@@ -77,14 +75,14 @@ public class DriverRegistry {
     private void registerDrivers(Collection<DriverInfo> drivers) {
         for (DriverInfo di : drivers) {
             driverInfos.put(di, di.driver);
-            log.info("Registering {}",di);
+            log.info("Registering {}", di);
         }
     }
 
     private void deregisterDrivers(Collection<DriverInfo> drivers) {
         for (DriverInfo di : drivers) {
             driverInfos.remove(di);
-            log.info("Deregistering {}",di);
+            log.info("Deregistering {}", di);
         }
     }
 
@@ -100,7 +98,7 @@ public class DriverRegistry {
                 if (!line.startsWith("#") && line.trim().length() > 0) {
                     try {
                         Class<?> clazz = bundle.loadClass(line);
-                        extensions.add(new DriverInfo(bundle,(Driver) clazz.newInstance()));
+                        extensions.add(new DriverInfo(bundle, (Driver) clazz.newInstance()));
                     } catch (Throwable t) {
                         log.warn("Cannot register java.sql.Driver [{}] from bundle [{}]",
                                 new Object[]{line, bundle, t});
@@ -149,6 +147,7 @@ public class DriverRegistry {
             this.bundle = bundle;
         }
 
+        @SuppressWarnings("RedundantIfStatement")
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

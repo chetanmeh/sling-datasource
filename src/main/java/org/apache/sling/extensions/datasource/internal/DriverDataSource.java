@@ -85,6 +85,7 @@ class DriverDataSource implements DataSource {
             if (log.isDebugEnabled()) {
                 log.debug("Unable to connect to database.", x);
             }
+            //Based on logic in org.apache.tomcat.jdbc.pool.PooledConnection.connectUsingDriver()
             if (jmxPool!=null) {
                 jmxPool.notify(org.apache.tomcat.jdbc.pool.jmx.ConnectionPool.NOTIFY_CONNECT,
                         ConnectionPool.getStackTrace(x));
@@ -157,6 +158,9 @@ class DriverDataSource implements DataSource {
         }
 
         if(driver == null){
+            //This one is redundant as DriverManager would filter out drivers
+            //whose classes are not visible from our bundle classloader which
+            //means that this list would be empty in most cases
             log.debug("Looking for driver from DriverManager");
             driver = findMatchingDriver(Collections.list(DriverManager.getDrivers()));
         }
